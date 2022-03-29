@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\cmake",
+    "\\secp256k1\\src",
+    "\\test"
+  ],
+  "SelectedNode": "\\test\\authenticatortest.cpp",
+  "PreviewInSolutionExplorer": false
+}
