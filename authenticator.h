@@ -58,10 +58,17 @@ public:
         std::array<ChameleonHash::rand_t, DEPTH> rs;
     };
 
+	struct altMessage {
+		std::vector<token_t> token;
+		std::vector<st_t> ms;
+	};
+
     Authenticator(const Authenticator::dsk_t& dsk, const Authenticator::dw_t& dw, int n);
     Authenticator(const Authenticator::dpk_t& dpk, const Authenticator::dw_t& dw);
 
     void authenticate(token_t& t, const ct_t& ct, const st_t& st, int n);
+	void authenticates(altMessage& t, int cnt, const ct_t& ct, int n, ChameleonHash::hash_t& res);
+	bool verifys(const altMessage& t, int cnt, const ct_t& ct, int n, ChameleonHash::hash_t& res);
     bool verify(const token_t& t, const ct_t& ct, const st_t& st, int n);
     void extract(const token_t& t1, const token_t& t2, const ct_t& ct, const st_t& st1, const st_t& st2, int n1, int n2);
 
