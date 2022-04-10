@@ -46,10 +46,11 @@ public:
     static const int n = 1000;
 
     // some deterministic test messages
-    static const ChameleonHash::mesg_t m1, m2;
+    static const ChameleonHash::mesg_t m1, m2, st[2];
     static const ChameleonHash::rand_t r1, r2;
     static const ChameleonHash::hash_t ch1;
     static const Authenticator::ct_t ct;
+	static const Authenticator::ct_t ctt[2];
 
     static vector<ChameleonHash::mesg_t> xs;
     static vector<ChameleonHash::rand_t> rs;
@@ -105,6 +106,7 @@ const ChameleonHash::W AuthenticatorTest::w = {
 
 const ChameleonHash::mesg_t AuthenticatorTest::m1 = { 'a', 'b', 'c' };
 const ChameleonHash::mesg_t AuthenticatorTest::m2 = { '1', '2', '3' };
+const ChameleonHash::mesg_t AuthenticatorTest::st[2] = { { '1', '2', '3' },{ 'a', 'b', 'c' } };
 const ChameleonHash::rand_t AuthenticatorTest::r1 = {
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
@@ -201,4 +203,17 @@ TEST_F(AuthenticatorTest, AuthenticatorExtractSimple) {
 
     acca.extract(t1, t2, ct, m1, m2, 1, 2);
     EXPECT_EQ(sk, acca.getDsk());
+}
+
+TEST_F(AuthenticatorTest, AuthenticatorMergeVerifySimple) {
+	Authenticator acca(sk, w, 0);
+	ChameleonHash::hash_t hash;
+	Authenticator::altMessage t;
+	Authenticator::token_t t1, t2;
+	t.token.push_back(t1);
+	t.token.push_back(t2);
+	t.ms.push_back(m1);
+	t.ms.push_back(m2);
+	acca.authenticates(t, 2, ct, 1, hash);
+	EXPECT_TRUE(acca.verifys(t, 2, ct, 1, hash));
 }
