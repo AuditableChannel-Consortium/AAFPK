@@ -93,10 +93,13 @@ public:
     void collision(const digest_t& d1, const rand_t& r1, int n1, const mesg_t& m2, rand_t& r2, int n2);
     void collision(const mesg_t& m1, const rand_t& r1, int n1, const digest_t& d2, rand_t& r2, int n2);
     void collision(const mesg_t& m1, const rand_t& r1, int n1, const mesg_t& m2, rand_t& r2, int n2);
+	
+	void merge(hash_t& res, std::vector<digest_t>& m, std::vector<rand_t>& r, int n, int cnt);
 
     static void digest(digest_t& digest, const mesg_t& m);
     static void digest(digest_t& digest, const hash_t& in1, const hash_t& in2);
     static void randomOracle(ChameleonHash::hash_t& out, const ChameleonHash::hash_t& in1, const ChameleonHash::rand_t& in2);
+	
 
 private:
     secp256k1_gej_t pk;
