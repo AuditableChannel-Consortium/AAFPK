@@ -116,13 +116,13 @@ void ChameleonHash::ch(hash_t& res, const digest_t& m, const rand_t& r, int n)
 {
     // m cannot overflow, this is ensured by the public ch() method
     secp256k1_scalar_t ms;
-    //½«±êÁ¿ÉèÖÃÎªÎŞ·ûºÅÕûÊı
+    //å°†æ ‡é‡è®¾ç½®ä¸ºæ— ç¬¦å·æ•´æ•°
     secp256k1_scalar_set_b32(&ms, m.data(), nullptr);
 
     int overflow;
 
     secp256k1_scalar_t rs;
-    //½«±êÁ¿ÉèÖÃÎªÎŞ·ûºÅÕûÊı
+    //å°†æ ‡é‡è®¾ç½®ä¸ºæ— ç¬¦å·æ•´æ•°
     secp256k1_scalar_set_b32(&rs, r.data(), &overflow);
     if (overflow) {
         throw std::invalid_argument("overflow in randomness");
@@ -151,23 +151,23 @@ void ChameleonHash::ch(hash_t& res, const digest_t& m, const rand_t& r, int n)
         //set (n*w)*r
         secp256k1_scalar_mul(&a, &a, &rs);
 
-        //½«Á½¸ö±êÁ¿Ïà³Ë£¨ÒÔ×éË³ĞòÎªÄ££©¡£ r*sk
+        //å°†ä¸¤ä¸ªæ ‡é‡ç›¸ä¹˜ï¼ˆä»¥ç»„é¡ºåºä¸ºæ¨¡ï¼‰ã€‚ r*sk
         secp256k1_scalar_mul(&rs, &rs, &this->sk);
-        //½«Á½¸ö±êÁ¿Ïà¼Ó£¨°´×éË³Ğò½øĞĞÄ£ÔËËã£©¡£·µ»ØÊÇ·ñÒÑÒç³ö¡£ m+sk*r
+        //å°†ä¸¤ä¸ªæ ‡é‡ç›¸åŠ ï¼ˆæŒ‰ç»„é¡ºåºè¿›è¡Œæ¨¡è¿ç®—ï¼‰ã€‚è¿”å›æ˜¯å¦å·²æº¢å‡ºã€‚ m+sk*r
         secp256k1_scalar_add(&rs, &rs, &ms);
 
         // set m+sk*r+(n*w)*r
         secp256k1_scalar_add(&rs, &rs, &a);
 
-        //ÔÚÇ©Ãû¹ı³ÌÖĞÓÃÓÚ¼ÓËÙa*G¼ÆËã g^(m+(sk+(n*w))*r)
+        //åœ¨ç­¾åè¿‡ç¨‹ä¸­ç”¨äºåŠ é€Ÿa*Gè®¡ç®— g^(m+(sk+(n*w))*r)
         secp256k1_ecmult_gen(&resgej, &rs);
     }
     else {
         secp256k1_ecmult(&resgej, &this->pk, &rs, &ms);
     }
-    //»ñÈ¡²úÉúÆ÷£¨ÔÚgroup°üÀïÌáµ½¹ı£©
+    //è·å–äº§ç”Ÿå™¨ï¼ˆåœ¨groupåŒ…é‡Œæåˆ°è¿‡ï¼‰
     secp256k1_ge_set_gej(&resge, &resgej);
-    //Ç©Ãû
+    //ç­¾å
     if (!secp256k1_eckey_pubkey_serialize(&resge, res.data(), &hash_len, 1) || hash_len != HASH_LEN) {
         throw std::logic_error("cannot serialize chameleon hash");
     }
@@ -404,4 +404,27 @@ void ChameleonHash::randomOracle(hash_t& out, const hash_t& in1, const rand_t& i
     secp256k1_hmac_sha256_write(&hmac, in2.data(), in2.size());
     secp256k1_hmac_sha256_finalize(&hmac, out.data());
     out[32] = '\0';
+}
+
+void ChameleonHash::merge(hash_t& res, std::vector<digest_t>& m, std::vector<rand_t>& r, int n, int cnt)
+{
+	secp256k1_scalar_t ms;
+	secp256k1_scalar_clear(&ms);
+
+	secp256k1_scalar_t rs;
+	secp256k1_scalar_clear(&rs);
+
+	for (int i = 0; i < cnt; i++) {
+		secp256k1_scalar_t t1, t2;
+		secp256k1_scalar_set_b32(&t1, m[i].data(), nullptr);
+		secp256k1_scalar_set_b32(&t2, r[i].data(), nullptr);
+		secp256k1_scalar_add(&ms, &ms, &t1);
+		secp256k1_scalar_add(&rs, &rs, &t2);
+	}
+
+	digest_t _m;
+	rand_t _r;
+	secp256k1_scalar_get_b32(_m.data(), &ms);
+	secp256k1_scalar_get_b32(_r.data(), &rs);
+	ch(res, _m, _r, n);
 }
