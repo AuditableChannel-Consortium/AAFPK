@@ -105,6 +105,44 @@ void Authenticator::authenticate(token_t& t, const Authenticator::ct_t& ct, cons
     assert(subTreeX == rootDigest);
 }
 
+void Authenticator::authenticates(altMessage& t, int cnt, const ct_t& ct, int n, ChameleonHash::hash_t& res)
+{
+	for (int i = 0; i < cnt; i++) {
+		authenticate(t.token[i], ct, t.ms[i], n);
+	}
+	std::vector< ChameleonHash::rand_t> r;
+	for (int i = 0; i < cnt; i++) {
+		r.push_back(*t.token[i].rs.begin());
+	}
+	std::vector< ChameleonHash::digest_t> ms;
+	for (int i = 0; i < cnt; i++) {
+		ChameleonHash::digest_t X;
+		ChameleonHash::digest(X, t.ms[i]);
+		ms.push_back(X);
+	}
+	ch.merge(res, ms, r, n, cnt);
+}
+
+bool Authenticator::verifys(const altMessage& t, int cnt, const ct_t& ct, int n, ChameleonHash::hash_t& res)
+{
+	for (int i = 0; i < cnt; i++) {
+		if (!verifyWithLog(t.token[i], ct, t.ms[i], nullptr, n)) return false;
+	}
+	std::vector<ChameleonHash::rand_t> r;
+	for (int i = 0; i < cnt; i++) {
+		r.push_back(*t.token[i].rs.begin());
+	}
+	std::vector<ChameleonHash::digest_t> ms;
+	for (int i = 0; i < cnt; i++) {
+		ChameleonHash::digest_t X;
+		ChameleonHash::digest(X, t.ms[i]);
+		ms.push_back(X);
+	}
+	ChameleonHash::hash_t hash;
+	ch.merge(hash, ms, r, n, cnt);
+	return (hash == res);
+}
+
 bool Authenticator::verify(const Authenticator::token_t& t, const Authenticator::ct_t& ct, const Authenticator::st_t& st, int n)
 {
     return verifyWithLog(t, ct, st, nullptr, n);
@@ -187,4 +225,3 @@ Authenticator::dsk_t Authenticator::getDsk()
 {
     return ch.getSk();
 }
-
