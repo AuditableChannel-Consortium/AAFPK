@@ -406,25 +406,103 @@ void ChameleonHash::randomOracle(hash_t& out, const hash_t& in1, const rand_t& i
     out[32] = '\0';
 }
 
-void ChameleonHash::merge(hash_t& res, std::vector<digest_t>& m, std::vector<rand_t>& r, int n, int cnt)
+void ChameleonHash::calcaG(secp256k1_ge_t *resge, digest_t& m, rand_t& r, pk_t& pk) {
+	// m cannot overflow, this is ensured by the public ch() method
+	secp256k1_scalar_t ms, tmp;
+	//将标量设置为无符号整数
+	secp256k1_scalar_set_b32(&ms, m.data(), nullptr);
+
+	secp256k1_ge_t pkge;
+	secp256k1_gej_t pkgej;
+	if (!secp256k1_eckey_pubkey_parse(&pkge, pk.data(), pk.size())) {
+		throw std::invalid_argument("not a valid public key");
+	}
+	secp256k1_gej_set_ge(&pkgej, &pkge);
+
+	int overflow;
+	secp256k1_scalar_t rs;
+	//将标量设置为无符号整数
+	secp256k1_scalar_set_b32(&rs, r.data(), &overflow);
+	if (overflow) {
+		throw std::invalid_argument("overflow in randomness");
+	}
+
+	secp256k1_gej_t resgej, resgej_;
+
+	secp256k1_ecmult_gen(&resgej, &ms);
+
+	secp256k1_scalar_clear(&tmp);
+	secp256k1_ecmult(&resgej_, &pkgej, &rs, &tmp);
+	secp256k1_ge_set_gej(resge, &resgej_);
+	secp256k1_gej_add_ge_var(&resgej, &resgej, resge);
+	secp256k1_ge_set_gej(resge, &resgej);
+}
+void ChameleonHash::mergeV(hash_t& res, std::vector<digest_t>& m, std::vector<rand_t>& r,std::vector<pk_t>& pk, int cnt)
 {
 	secp256k1_scalar_t ms;
 	secp256k1_scalar_clear(&ms);
-
-	secp256k1_scalar_t rs;
-	secp256k1_scalar_clear(&rs);
-
+	secp256k1_gej_t resgej;
+	secp256k1_ge_t resge;
+	secp256k1_ecmult_gen(&resgej, &ms);
 	for (int i = 0; i < cnt; i++) {
-		secp256k1_scalar_t t1, t2;
-		secp256k1_scalar_set_b32(&t1, m[i].data(), nullptr);
-		secp256k1_scalar_set_b32(&t2, r[i].data(), nullptr);
-		secp256k1_scalar_add(&ms, &ms, &t1);
-		secp256k1_scalar_add(&rs, &rs, &t2);
+		calcaG(&resge, m[i], r[i], pk[i]);
+		secp256k1_gej_add_ge_var(&resgej, &resgej, &resge);
 	}
+	secp256k1_ge_set_gej(&resge, &resgej);
+	int hash_len = 0;
+	if (!secp256k1_eckey_pubkey_serialize(&resge, res.data(), &hash_len, 1) || hash_len != HASH_LEN) {
+		throw std::logic_error("cannot serialize chameleon hash");
+	}
+}
 
-	digest_t _m;
-	rand_t _r;
-	secp256k1_scalar_get_b32(_m.data(), &ms);
-	secp256k1_scalar_get_b32(_r.data(), &rs);
-	ch(res, _m, _r, n);
+void ChameleonHash::mergeA(hash_t& res, std::vector<digest_t>& m, std::vector<rand_t>& r, int n[], int cnt)
+{
+	secp256k1_scalar_t res_;
+	secp256k1_scalar_clear(&res_);
+	for (int i = 0; i < cnt; i++) {
+		// now we (ab)use the rs variable to compute the result
+		// set n*w
+		secp256k1_scalar_t ms;
+		secp256k1_scalar_t rs;
+		secp256k1_scalar_t x;
+		secp256k1_scalar_t a;
+		secp256k1_scalar_clear(&a);
+		secp256k1_scalar_clear(&x);
+		secp256k1_scalar_set_b32(&ms, m[i].data(), nullptr);
+		int overflow;
+		secp256k1_scalar_set_b32(&rs, r[i].data(), &overflow);
+		if (overflow) {
+			throw std::invalid_argument("overflow in randomness");
+		}
+		secp256k1_scalar_add(&x, &x, &this->w);
+		while (n[i]) {
+			if (n[i] & 1) {
+				secp256k1_scalar_add(&a, &a, &x);
+			}
+			secp256k1_scalar_add(&x, &x, &x);
+			n[i] >>= 1;
+		}
+		//set (n*w)*r
+		secp256k1_scalar_mul(&a, &a, &rs);
+
+		//将两个标量相乘（以组顺序为模）。 r*sk
+		secp256k1_scalar_mul(&rs, &rs, &this->sk);
+		//将两个标量相加（按组顺序进行模运算）。返回是否已溢出。 m+sk*r
+		secp256k1_scalar_add(&rs, &rs, &ms);
+
+		// set m+sk*r+(n*w)*r
+		secp256k1_scalar_add(&rs, &rs, &a);
+
+		// set res+{m_i}
+		secp256k1_scalar_add(&res_, &res_, &rs);
+	}
+	secp256k1_gej_t resgej;
+	secp256k1_ge_t resge;
+	secp256k1_ecmult_gen(&resgej, &res_);
+	secp256k1_ge_set_gej(&resge, &resgej);
+	//签名
+	int hash_len = 0;
+	if (!secp256k1_eckey_pubkey_serialize(&resge, res.data(), &hash_len, 1) || hash_len != HASH_LEN) {
+		throw std::logic_error("cannot serialize chameleon hash");
+	}
 }
