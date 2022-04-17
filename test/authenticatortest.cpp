@@ -31,6 +31,7 @@
 #include <random>
 #include <array>
 #include <iomanip>
+#include <cstdio>
 
 using namespace std;
 
@@ -191,8 +192,8 @@ TEST_F(AuthenticatorTest, AuthenticatorCorrectSingle) {
     Authenticator acca(sk, w, 0);
     Authenticator::token_t t;
 
-    acca.authenticate(t, ct, m1, 0);
-    EXPECT_TRUE(acca.verify(t, ct, m1, 0));
+    acca.authenticate(t, ct, m1, 2);
+    EXPECT_TRUE(acca.verify(t, ct, m1, 2));
 }
 
 TEST_F(AuthenticatorTest, AuthenticatorExtractSimple) {
@@ -222,3 +223,46 @@ TEST_F(AuthenticatorTest, AuthenticatorMergeVerifySimple) {
 	EXPECT_TRUE(acca.verifys(t, 2, ct, n, pks, w, hash));
 }
 
+TEST_F(AuthenticatorTest, TestSingleDataTime) {
+	Authenticator acca(sk, w, 0);
+	Authenticator::token_t t;
+	clock_t start, end;
+	int total = 0;
+	for (int i = 1; i <= 100; i++) {
+		acca.authenticate(t, ct, m1, i);
+		start = clock();
+		EXPECT_TRUE(acca.verify(t, ct, m1, i));
+		end = clock();
+		total += (int)((float)(end - start) * 1000 / CLOCKS_PER_SEC);
+	}
+	printf("totile time=%d ms\n", total);
+}
+
+TEST_F(AuthenticatorTest, TestMultipleDateTime) {
+	Authenticator acca(sk, w, 0);
+	ChameleonHash::hash_t hash;
+	Authenticator::altMessage t;
+	Authenticator::token_t t1;
+	vector<ChameleonHash::pk_t> pks;
+	int n[100];
+	for (int i = 0; i < 100; i++) {
+		n[i] = i+1;
+	}
+	for (int i = 0; i < 100; i++) {
+		t.token.push_back(t1);
+	}
+	for (int i = 0; i < 100; i++) {
+		t.ms.push_back(m1);
+	}
+	for (int i = 0; i < 100; i++) {
+		ChameleonHash ch(sk, w, i + 1);
+		pks.push_back(ch.getPk(true));
+	}
+	acca.authenticates(t, 100, ct, n, hash);
+	clock_t start, end;
+	start = clock();
+	acca.verifys(t, 100, ct, n, pks, w, hash);
+	end = clock();
+	printf("totile time=%d ms\n", (int)((float)(end - start) * 1000 / CLOCKS_PER_SEC));
+	EXPECT_TRUE(acca.verifys(t, 100, ct, n, pks, w, hash));
+}
