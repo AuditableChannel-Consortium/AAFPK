@@ -6,7 +6,7 @@ This project is modified from ( https://github.com/real-or-random/accas ) for ha
 
 ## Functionality
 
-- Change the chameleonHash private key to $(\alpha, w)$ and corresponding public key to $g^{n*w+\alpha}$, so that the same private key can generate different public keys through $n$ .
+- Change the chameleonHash private key to `$(\alpha, w)$` and corresponding public key to `$g^{n*w+\alpha}$`, so that the same private key can generate different public keys through $n$ .
 
 - Validators can choose to validate individually or in batches.
 
