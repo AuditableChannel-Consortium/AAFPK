@@ -125,11 +125,11 @@ void Authenticator::authenticates(altMessage& t, int cnt, const ct_t& ct, int n[
 
 bool Authenticator::verifys(const altMessage& t, int cnt, const ct_t& ct, int n[],std::vector<ChameleonHash::pk_t> pk, dw_t w, ChameleonHash::hash_t& res)
 {
-	for (int i = 0; i < cnt; i++) {
+	/*for (int i = 0; i < cnt; i++) {
 		ChameleonHash ch_t(pk[i], w);
 		this->ch = ch_t;
 		if (!verifyWithLog(t.token[i], ct, t.ms[i], nullptr, n[i])) return false;
-	}
+	}*/
 	std::vector<ChameleonHash::rand_t> r;
 	for (int i = 0; i < cnt; i++) {
 		r.push_back(*t.token[i].rs.begin());
