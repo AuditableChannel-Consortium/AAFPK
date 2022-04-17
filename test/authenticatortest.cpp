@@ -210,10 +210,15 @@ TEST_F(AuthenticatorTest, AuthenticatorMergeVerifySimple) {
 	ChameleonHash::hash_t hash;
 	Authenticator::altMessage t;
 	Authenticator::token_t t1, t2;
+	vector<ChameleonHash::pk_t> pks;
+	int n[2] = { 0, 0 };
 	t.token.push_back(t1);
 	t.token.push_back(t2);
 	t.ms.push_back(m1);
 	t.ms.push_back(m2);
-	acca.authenticates(t, 2, ct, 1, hash);
-	EXPECT_TRUE(acca.verifys(t, 2, ct, 1, hash));
+	pks.push_back(pk);
+	pks.push_back(pk);
+	acca.authenticates(t, 2, ct, n, hash);
+	EXPECT_TRUE(acca.verifys(t, 2, ct, n, pks, w, hash));
 }
+
