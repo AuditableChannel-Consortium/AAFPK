@@ -1,4 +1,4 @@
-# Accountable Assertions
+# Accountable Assertions with Flexible Public Key
 
 ## Introduce
 
@@ -6,8 +6,10 @@ This project is modified from ( https://github.com/real-or-random/accas ) for ha
 
 ## Functionality
 
-- Change the chameleonHash private key to $(\alpha, w)$ and corresponding public key to $g^{n*w+\alpha}$, so that the same private key can generate different public keys through $n$ .
+- Change the chameleonHash private key to $(\alpha, \omega)$ and corresponding public key to $g^{n*\omega+\alpha}$, so that the same private key can generate different public keys through $n$ .
 
+-  $apk'\leftarrow\textsf{ChgAPK}(apk,\omega)$: The public key change algorithm takes a representative public key $apk$, and a public parameter $\omega$ as inputs, and outputs a different representative public key $apk'$, where $apk'\in [apk]_R$ for some equivalence class $[apk]_R$.
+- $ask'\leftarrow\textsf{ChgASK}(ask,\omega)$: The secret key change algorithm takes a representative secret key $ask$, and a same public parameter $\omega$ as inputs, and outputs an updated secret key $ask'$.
 - Validators can choose to validate individually or in batches.
 
 ## Dependencies
