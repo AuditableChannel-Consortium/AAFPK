@@ -93,8 +93,9 @@ public:
     void collision(const digest_t& d1, const rand_t& r1, int n1, const mesg_t& m2, rand_t& r2, int n2);
     void collision(const mesg_t& m1, const rand_t& r1, int n1, const digest_t& d2, rand_t& r2, int n2);
     void collision(const mesg_t& m1, const rand_t& r1, int n1, const mesg_t& m2, rand_t& r2, int n2);
-	
-	void merge(hash_t& res, std::vector<digest_t>& m, std::vector<rand_t>& r, int n, int cnt);
+
+	void mergeA(hash_t& res, std::vector<digest_t>& m, std::vector<rand_t>& r, int n[],int cnt);
+	void mergeV(hash_t& res, std::vector<digest_t>& m, std::vector<rand_t>& r, std::vector<pk_t>& pk, int cnt);
 
     static void digest(digest_t& digest, const mesg_t& m);
     static void digest(digest_t& digest, const hash_t& in1, const hash_t& in2);
@@ -109,6 +110,7 @@ private:
     bool hasSecretKey_;
 
     static void initialize();
+	void calcaG(secp256k1_ge_t *resge, digest_t& m, rand_t& r, pk_t& pk);
 };
 
 #endif // CHAMELEONHASH_H
